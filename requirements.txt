@@ -1,0 +1,4 @@
+-e /workdir/indipy
+requests==2.18.4
+scikit-image==0.13.1
+pylinac==2.0.1
