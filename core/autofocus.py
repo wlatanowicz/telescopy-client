@@ -1,7 +1,7 @@
 from concurrent import futures
 
-from value_object import MeasuredImage
-import alg
+from core.value_object import MeasuredImage
+from core import alg
 import math
 
 

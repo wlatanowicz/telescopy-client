@@ -1,22 +1,21 @@
-import time
 import threading
 
 from indi.client.Client import Client
 from indi.transport.client import TCP
 from indi.message import const
-from indi.client import elements
 
-from value_object import Image
+from core.value_object import Image
+import settings
 
 
 class Connector:
     def __init__(self,
                  ip='127.0.0.1', port=7624, http_port=8000,
-                 camera_name='CAMERA_SIMULATOR', focuser_name='FOCUSER_SIMULATOR'
+                 camera_name=None, focuser_name=None
                  ):
         self.client = None
-        self.camera_name = camera_name
-        self.focuser_name = focuser_name
+        self.camera_name = camera_name or settings.CAMERA_NAME
+        self.focuser_name = focuser_name or settings.FOCUSER_NAME
         self.camera = None
         self.focuser = None
         self.ip = ip
@@ -24,8 +23,8 @@ class Connector:
         self.http_port = http_port
 
     def connect(self):
-        control_connection = TCP()
-        blob_connection = TCP()
+        control_connection = TCP(self.ip, self.port)
+        blob_connection = TCP(self.ip, self.port)
 
         self.client = Client(control_connection, blob_connection)
         self.client.start()

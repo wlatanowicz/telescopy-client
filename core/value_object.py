@@ -2,11 +2,11 @@ import requests
 import settings
 import os
 import json
-import alg
-from skimage.feature import blob_dog, blob_log, blob_doh
+from core import alg
+from skimage.feature import blob_log
 from skimage.color import rgb2gray
 from skimage import io
-from math import sqrt, log, ceil, floor
+from math import ceil, floor
 
 
 class Image:
@@ -81,9 +81,19 @@ class StarArea:
 class MeasuredImage:
     def __init__(self, image):
         self.image = image
-        image_rgb = io.imread(image.image_file)
-        self.image_arr = rgb2gray(image_rgb)
+        loaded_img_arr = io.imread(image.image_file)
+        self.image_arr = self.to_gray(loaded_img_arr)
         self.stars = []
+
+    @staticmethod
+    def to_gray(image_arr):
+        if image_arr.shape == (2,):
+            return rgb2gray(image_arr[0])
+        if len(image_arr.shape) == 3 and image_arr.shape[2] == 3:
+            return rgb2gray(image_arr)
+        if len(image_arr.shape) == 2:
+            return image_arr
+        raise Exception(f'Do not know how to convert image of shape {image_arr.shape} to grayscale')
 
     @classmethod
     def from_image(cls, image, measure=True):
