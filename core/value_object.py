@@ -43,6 +43,11 @@ class Image:
         self.image_file = path
         self.write_meta()
 
+    def delete_remote_image(self):
+        url = self.source_url
+        requests.delete(url)
+        print(f'Deleted {url}')
+
     def write_meta(self):
         path = self.image_file + '.json'
 

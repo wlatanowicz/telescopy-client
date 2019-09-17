@@ -1,5 +1,7 @@
--e /workdir/indipy
+# master@2019-09-18 /2
+git+https://github.com/wlatanowicz/indipy.git
+
 requests==2.18.4
-scikit-image==0.13.1
+scikit-image==0.15.0
 pylinac==2.0.1
-npyscreen==4.10.5
+fire==0.2.1

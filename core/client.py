@@ -1,6 +1,6 @@
 import threading
 
-from indi.client.Client import Client
+from indi.client.client import Client
 from indi.transport.client import TCP
 from indi.message import const
 
@@ -10,7 +10,7 @@ import settings
 
 class Connector:
     def __init__(self,
-                 ip='127.0.0.1', port=7624, http_port=8000,
+                 ip='127.0.0.1', port=7624,
                  camera_name=None, focuser_name=None
                  ):
         self.client = None
@@ -20,7 +20,7 @@ class Connector:
         self.focuser = None
         self.ip = ip
         self.port = port
-        self.http_port = http_port
+        self.http_port = 8000
 
     def connect(self):
         control_connection = TCP(self.ip, self.port)
@@ -103,8 +103,8 @@ class Connector:
 
         print(self.camera['LAST_IMAGE_URL']['JPEG'].value)
 
-        rel_url = self.camera['LAST_IMAGE_URL']['JPEG'].value
-        url = f'http://{self.ip}:{self.http_port}/{rel_url}'
+        url = self.camera['LAST_IMAGE_URL']['JPEG'].value
+        # url = f'http://{self.ip}:{self.http_port}/{rel_url}'
 
         meta = {
             'focus': focus
@@ -122,3 +122,38 @@ class Connector:
                 img.download_image()
 
         return img
+
+    def expose_only(self, time):
+        print(f'Setting CCD_EXPOSURE_VALUE = {time}')
+        prev_raw = self.camera['LAST_IMAGE_URL']['RAW'].value
+
+        self.camera['CCD_EXPOSURE']['CCD_EXPOSURE_VALUE'].value = time
+        self.camera['CCD_EXPOSURE'].submit()
+
+        self.client.waitforchange(
+            device=self.camera.name,
+            vector='LAST_IMAGE_URL',
+            element='RAW',
+            what='value',
+            initial=prev_raw
+        )
+
+        print(self.camera['LAST_IMAGE_URL']['JPEG'].value)
+
+        rel_url = self.camera['LAST_IMAGE_URL']['JPEG'].value
+        url = f'http://{self.ip}:{self.http_port}/{rel_url}'
+
+        meta = {}
+
+        img = Image(source_url=url, meta=meta)
+        img.download_image()
+        img.delete_remote_image()
+
+        raw_rel_url = self.camera['LAST_IMAGE_URL']['RAW'].value
+        raw_url = f'http://{self.ip}:{self.http_port}/{raw_rel_url}'
+
+        raw_img = Image(source_url=raw_url, meta=meta)
+        raw_img.download_image()
+        raw_img.delete_remote_image()
+
+        return img, raw_img

@@ -9,7 +9,7 @@ class Autofocus:
     def __init__(self, connector):
         self.connector = connector
 
-    def autofocus(self, time, min_focus, max_focus, steps):
+    def autofocus(self, time, min_focus, max_focus, steps, max_stars=5):
         step = int((max_focus - min_focus) / steps)
 
         step_list = list(range(min_focus, max_focus, step))
@@ -31,7 +31,7 @@ class Autofocus:
             futures.wait(threads)
 
             ms = Autofocus.MeasuredStars.from_measured_images(measured_images)
-            fwhms = ms.to_fwhm_list()
+            fwhms = ms.to_fwhm_list(max_stars=max_stars)
 
             p = alg.v_shape_linear_fit(fwhms)
 
@@ -69,7 +69,30 @@ class Autofocus:
             def dist(s1, s2):
                 return math.sqrt((s1.x - s2.x) ** 2 + (s1.y - s2.y) ** 2)
 
-            return [s for s in self.stars if dist(s, star) <= tolerance]
+            result = []
+            focus_points = self.focus_points()
+
+            star_focus_idx = focus_points.index(star.focus)
+
+            ref_star = star
+            for focus in focus_points[star_focus_idx:]:
+                stars = self.stars_at_focus(focus)
+                near_stars = [s for s in stars if dist(s, ref_star) <= tolerance]
+                if len(near_stars) > 0:
+                    near_stars = sorted(near_stars, key=lambda s: dist(ref_star, s))
+                    result.append(near_stars[0])
+                    ref_star = near_stars[0]
+
+            ref_star = star
+            for focus in focus_points[:star_focus_idx][::-1]:
+                stars = self.stars_at_focus(focus)
+                near_stars = [s for s in stars if dist(s, ref_star) <= tolerance]
+                if len(near_stars) > 0:
+                    near_stars = sorted(near_stars, key=lambda s: dist(ref_star, s))
+                    result.append(near_stars[0])
+                    ref_star = near_stars[0]
+
+            return result
 
         def stars_at_focus(self, focus):
             return [star for star in self.stars if star.focus == focus]
