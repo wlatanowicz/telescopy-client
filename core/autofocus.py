@@ -33,13 +33,31 @@ class Autofocus:
             ms = Autofocus.MeasuredStars.from_measured_images(measured_images)
             fwhms = ms.to_fwhm_list(max_stars=max_stars)
 
+            print()
+            self.print_fit_input(fwhms)
+
             p = alg.v_shape_linear_fit(fwhms)
 
-            print(fwhms)
-            print(p)
+            print()
+            self.print_fit_output(p)
+
+            print()
 
             best_focus = int(p[0])
             self.connector.expose(focus=best_focus, time=time)
+
+    def print_fit_input(self, fwhms):
+        print('Linear fit input:')
+        for row in fwhms:
+            print('Focus: {focus}'.format(focus=row[0]))
+            print('  - values:\t{vals}'.format(vals='\t'.join(['{:.4f}'.format(r) for r in row[1:]])))
+
+    def print_fit_output(self, p):
+        print('Linear fit output:')
+        print(' - best focus point: {:.3f}'.format(p[0]))
+        print(' - expected FWHMs:\t{}'.format('\t'.join(['{:.4f}'.format(r) for r in p[1:-2]])))
+        print(' - slope A: {:.5f}'.format(p[-2]))
+        print(' - slope B: {:.5f}'.format(p[-1]))
 
     class MeasuredStar:
         def __init__(self, x, y, fwhm, focus):

@@ -116,7 +116,23 @@ class MeasuredImage:
 
     def measure(self):
         self.stars = self.find_stars()
-        print(self.stars)
+        print(self)
 
     def __repr__(self):
-        return f'MeasuredImage {self.stars}'
+        if self.image.meta and 'focus' in self.image.meta:
+            focus = self.image.meta['focus']
+            meta = f'(focus={focus})'
+        else:
+            meta = '(no meta)'
+
+        if self.stars:
+            cnt = len(self.stars)
+            stars = f'({cnt} stars)\n' + '\n'.join([
+                f'  - Star ({s.x},{s.y}):\n'
+                f'      Radius: {s.radius}\n'
+                f'      FWHM: {s.fwhm}'
+                for s in self.stars
+            ])
+        else:
+            stars = '(no stars)'
+        return f'MeasuredImage: {meta} {stars}'

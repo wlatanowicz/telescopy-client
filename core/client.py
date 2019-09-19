@@ -101,8 +101,6 @@ class Connector:
             what='value'
         )
 
-        print(self.camera['LAST_IMAGE_URL']['JPEG'].value)
-
         url = self.camera['LAST_IMAGE_URL']['JPEG'].value
         # url = f'http://{self.ip}:{self.http_port}/{rel_url}'
 
@@ -137,8 +135,6 @@ class Connector:
             what='value',
             initial=prev_raw
         )
-
-        print(self.camera['LAST_IMAGE_URL']['JPEG'].value)
 
         rel_url = self.camera['LAST_IMAGE_URL']['JPEG'].value
         url = f'http://{self.ip}:{self.http_port}/{rel_url}'
