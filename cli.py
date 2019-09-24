@@ -26,12 +26,13 @@ class Cli:
         min=3000,
         max=4000,
         steps=10,
+        max_stars=5,
     ):
         conn = Connector(ip, int(port), camera_name=camera_name, focuser_name=focuser_name)
         conn.connect()
 
         af = Autofocus(conn)
-        af.autofocus(int(time), int(min), int(max), int(steps))
+        af.autofocus(int(time), int(min), int(max), int(steps), int(max_stars))
 
     def expose(
         self,

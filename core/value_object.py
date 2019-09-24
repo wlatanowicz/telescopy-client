@@ -41,6 +41,9 @@ class Image:
             f.write(image)
 
         self.image_file = path
+
+        self.meta['origin_url'] = url
+        self.meta['filename'] = filename
         self.write_meta()
 
     def delete_remote_image(self):
@@ -49,18 +52,19 @@ class Image:
         print(f'Deleted {url}')
 
     def write_meta(self):
-        path = self.image_file + '.json'
-
-        with open(path, 'w') as f:
+        with open(self.meta_file, 'w') as f:
             f.write(json.dumps(
                 self.meta,
                 indent=2
             ))
 
     def read_meta(self):
-        path = self.image_file + '.json'
-        with open(path, 'r') as f:
+        with open(self.meta_file, 'r') as f:
             self.meta = json.load(f)
+
+    @property
+    def meta_file(self):
+        return self.image_file + '.json'
 
 
 class StarArea:

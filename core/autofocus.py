@@ -16,11 +16,13 @@ class Autofocus:
         if step_list[:-1] != max_focus:
             step_list.append(max_focus)
 
+        image_jsons = []
         measured_images = []
         with futures.ThreadPoolExecutor(max_workers=4) as e:
             threads = []
             for f in step_list:
                 image = self.connector.expose(focus=f, time=time)
+                image_jsons.append(image.meta_file)
                 measured_image = MeasuredImage.from_image(image, measure=False)
                 measured_image.focus = f
                 measured_images.append(measured_image)
@@ -30,41 +32,89 @@ class Autofocus:
 
             futures.wait(threads)
 
-            ms = Autofocus.MeasuredStars.from_measured_images(measured_images)
-            fwhms = ms.to_fwhm_list(max_stars=max_stars)
+        ms = Autofocus.MeasuredStars.from_measured_images(measured_images)
+        fwhms, focus_sars = ms.to_fwhm_list(max_stars=max_stars)
 
-            print()
-            self.print_fit_input(fwhms)
+        print()
+        self.print_fit_input(fwhms)
 
-            p = alg.v_shape_linear_fit(fwhms)
+        p = alg.v_shape_linear_fit(fwhms)
 
-            print()
-            self.print_fit_output(p)
+        print()
+        self.print_fit_output(p)
 
-            print()
+        print()
 
-            best_focus = int(p[0])
-            self.connector.expose(focus=best_focus, time=time)
+        best_focus = int(p[0])
+        image = self.connector.expose(focus=best_focus, time=time)
+        measured_image = MeasuredImage.from_image(image, measure=True)
+        measured_image.focus = best_focus
+        ms.add_measured_image(measured_image)
+
+        self.plot_focus_image(best_focus, ms, focus_sars, image, image_jsons)
+
+    def plot_focus_image(self, focus, measured_stars, focus_stars, image, image_jsons):
+        tolerance_factor = 1
+        min_fwhm = min(s.fwhm for s in measured_stars.stars)
+        tolerance = min_fwhm * tolerance_factor
+
+        stars = [
+            measured_stars.star_at_focus(focus, s, tolerance)
+            for s in focus_stars
+        ]
+
+        print(stars)
+
+        import matplotlib.pyplot as plt
+        from skimage import io
+        import settings
+        import os
+        import datetime
+        import json
+
+        fig = plt.figure()
+        ax = fig.add_subplot(1, 1, 1)
+        image_arr = io.imread(image.image_file)
+        ax.imshow(image_arr)
+        ax.set_title('Autofocus')
+        for star in stars:
+            y, x, r = star.x, star.y, star.area_radius
+            c = plt.Circle((x, y), r, color='yellow', linewidth=1, fill=False)
+            ax.add_patch(c)
+        ax.set_axis_off()
+
+        date = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S-%f')
+        filename = f'{date}-autofocus-result.jpg'
+        path = os.path.join(settings.LOCAL_STORAGE, filename)
+
+        plt.savefig(path)
+
+        with open(f'{path}.json', 'w') as f:
+            f.write(json.dumps(
+                image_jsons,
+                indent=2
+            ))
 
     def print_fit_input(self, fwhms):
         print('Linear fit input:')
         for row in fwhms:
             print('Focus: {focus}'.format(focus=row[0]))
-            print('  - values:\t{vals}'.format(vals='\t'.join(['{:.4f}'.format(r) for r in row[1:]])))
+            print('  - values:\t{vals}'.format(vals='\t'.join(['{:.4f}'.format(r) if r is not None else 'None' for r in row[1:]])))
 
     def print_fit_output(self, p):
         print('Linear fit output:')
         print(' - best focus point: {:.3f}'.format(p[0]))
-        print(' - expected FWHMs:\t{}'.format('\t'.join(['{:.4f}'.format(r) for r in p[1:-2]])))
+        print(' - expected FWHMs:\t{}'.format('\t'.join(['{:.4f}'.format(r) if r is not None else 'None' for r in p[1:-2]])))
         print(' - slope A: {:.5f}'.format(p[-2]))
         print(' - slope B: {:.5f}'.format(p[-1]))
 
     class MeasuredStar:
-        def __init__(self, x, y, fwhm, focus):
+        def __init__(self, x, y, fwhm, focus, area_radius):
             self.x = x
             self.y = y
             self.fwhm = fwhm
             self.focus = focus
+            self.area_radius = area_radius
 
     class MeasuredStars:
         def __init__(self, image_width, image_height):
@@ -123,7 +173,7 @@ class Autofocus:
             return sum(s.fwhm for s in stars) / float(len(stars))
 
         def to_fwhm_list(self, tolerance_factor=1, max_stars=5):
-            res = []
+            fwhms = []
 
             stars = self.stars_at_focus(self.focus_with_best_avg_fwhm())
 
@@ -154,9 +204,9 @@ class Autofocus:
                 for s in stars:
                     s = self.star_at_focus(f, s, tolerance)
                     row.append(s.fwhm if s is not None else None)
-                res.append(row)
+                fwhms.append(row)
 
-            return res
+            return fwhms, stars
 
         @classmethod
         def from_measured_images(cls, images):
@@ -172,6 +222,21 @@ class Autofocus:
                             x=s.x, y=s.y,
                             focus=img.image.meta['focus'],
                             fwhm=s.fwhm,
+                            area_radius=s.radius,
                         )
                     )
             return ms
+
+        def add_measured_image(self, img):
+            if (self.image_width, self.image_height,) != img.image_arr.shape:
+                raise Exception('Different size of an image: {} vs {}'.format((self.image_width, self.image_width,), img.image_arr.shape))
+
+            for s in img.stars:
+                self.stars.append(
+                    Autofocus.MeasuredStar(
+                        x=s.x, y=s.y,
+                        focus=img.image.meta['focus'],
+                        fwhm=s.fwhm,
+                        area_radius=s.radius,
+                    )
+                )
