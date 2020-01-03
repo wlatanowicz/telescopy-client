@@ -26,7 +26,9 @@ class Image:
 
     def download_image(self):
         url = self.source_url
-        image = requests.get(url).content
+        r = requests.get(url)
+        r.raise_for_status()
+        image = r.content
         print(f'Downloaded {url}')
 
         filename = os.path.basename(url)
