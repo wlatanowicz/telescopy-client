@@ -10,10 +10,11 @@ from math import ceil, floor
 
 
 class Image:
-    def __init__(self, *, source_url=None, image_file=None, meta=None):
+    def __init__(self, *, source_url=None, image_file=None, meta=None, prefix=None):
         self.source_url = source_url
         self.image_file = image_file
         self.meta = meta if meta is not None else {}
+        self.prefix = prefix
 
         if image_file is not None:
             try:
@@ -32,6 +33,9 @@ class Image:
         print(f'Downloaded {url}')
 
         filename = os.path.basename(url)
+
+        if self.prefix:
+            filename = f"{self.prefix}-{filename}"
 
         path = os.path.join(settings.LOCAL_STORAGE, filename)
         dir = os.path.dirname(path)

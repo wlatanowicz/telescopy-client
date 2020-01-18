@@ -21,7 +21,7 @@ class Autofocus:
         with futures.ThreadPoolExecutor(max_workers=4) as e:
             threads = []
             for f in step_list:
-                image = self.connector.expose(focus=f, time=time)
+                image = self.connector.expose(focus=f, time=time, prefix="autofocus")
                 image_jsons.append(image.meta_file)
                 measured_image = MeasuredImage.from_image(image, measure=False)
                 measured_image.focus = f
@@ -46,7 +46,7 @@ class Autofocus:
         print()
 
         best_focus = int(p[0])
-        image = self.connector.expose(focus=best_focus, time=time)
+        image = self.connector.expose(focus=best_focus, time=time, prefix="autofocus-result")
         measured_image = MeasuredImage.from_image(image, measure=True)
         measured_image.focus = best_focus
         ms.add_measured_image(measured_image)
