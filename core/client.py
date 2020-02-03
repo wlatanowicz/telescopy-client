@@ -37,15 +37,15 @@ class Connector:
 
         if self.camera_name not in self.client.devices:
             logger.info('Waiting for CAMERA')
-            self.client.waitforchange(
+            self.client.waitforupdate(
                 device=self.camera_name,
                 vector='CONNECTION',
-                what='definition',
+                what='definition',``
             )
 
         if self.focuser_name not in self.client.devices:
             logger.info('Waiting for FOCUSER')
-            self.client.waitforchange(
+            self.client.waitforupdate(
                 device=self.focuser_name,
                 vector='CONNECTION',
                 what='definition',
@@ -53,7 +53,7 @@ class Connector:
 
         if self.phd2_name not in self.client.devices:
             logger.info('Waiting for PHD2')
-            self.client.waitforchange(
+            self.client.waitforupdate(
                 device=self.phd2_name,
                 vector='CONNECTION',
                 what='definition',
@@ -77,7 +77,7 @@ class Connector:
 
         if 'ABS_FOCUS_POSITION' not in self.focuser:
             logger.info('Waiting for FOCUS_ABSOLUTE_POSITION')
-            self.client.waitforchange(
+            self.client.waitforupdate(
                 device=self.focuser.name,
                 vector='ABS_FOCUS_POSITION',
                 what='definition'
@@ -85,7 +85,7 @@ class Connector:
 
         if 'CCD_EXPOSURE' not in self.camera:
             logger.info('Waiting for CCD_EXPOSURE')
-            self.client.waitforchange(
+            self.client.waitforupdate(
                 device=self.camera.name,
                 vector='CCD_EXPOSURE',
                 what='definition'
@@ -93,7 +93,7 @@ class Connector:
 
         if 'DITHER' not in self.phd2:
             logger.info('Waiting for DITHER')
-            self.client.waitforchange(
+            self.client.waitforupdate(
                 device=self.phd2.name,
                 vector='DITHER',
                 what='definition'
@@ -109,7 +109,7 @@ class Connector:
             self.focuser['ABS_FOCUS_POSITION']['FOCUS_ABSOLUTE_POSITION'].value = focus
             self.focuser['ABS_FOCUS_POSITION'].submit()
 
-            self.client.waitforchange(
+            self.client.waitforupdate(
                 device=self.focuser.name,
                 vector='ABS_FOCUS_POSITION',
                 element='FOCUS_ABSOLUTE_POSITION',
@@ -124,7 +124,7 @@ class Connector:
         self.camera['CCD_EXPOSURE'].submit()
         logger.info(f'DONE: Setting CCD_EXPOSURE_VALUE = {time}')
 
-        self.client.waitforchange(
+        self.client.waitforupdate(
             device=self.camera.name,
             vector='CCD_EXPOSURE',
             what='state',
@@ -158,7 +158,7 @@ class Connector:
         self.camera['CCD_EXPOSURE']['CCD_EXPOSURE_VALUE'].value = time
         self.camera['CCD_EXPOSURE'].submit()
 
-        self.client.waitforchange(
+        self.client.waitforupdate(
             device=self.camera.name,
             vector='CCD_EXPOSURE',
             what='state',
@@ -195,7 +195,7 @@ class Connector:
             self.phd2['DITHER']['DITHER_BY_PIXELS'].value = dither
             self.phd2['DITHER'].submit()
 
-            self.client.waitforchange(
+            self.client.waitforupdate(
                 device=self.phd2.name,
                 vector='DITHER',
                 what='state',
