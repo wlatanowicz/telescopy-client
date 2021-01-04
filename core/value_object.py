@@ -7,6 +7,7 @@ from skimage.feature import blob_log
 from skimage.color import rgb2gray
 from skimage import io
 from math import ceil, floor
+from urllib.parse import urlparse
 
 
 class Image:
@@ -27,10 +28,20 @@ class Image:
 
     def download_image(self):
         url = self.source_url
-        r = requests.get(url)
-        r.raise_for_status()
-        image = r.content
-        print(f'Downloaded {url}')
+        scheme = urlparse(url).scheme
+
+        if scheme in ("http", "https", "ftp"):
+            r = requests.get(url).scheme
+            r.raise_for_status()
+            image = r.content
+            print(f'Downloaded {url}')
+        elif scheme in ("file",):
+            file_path = urlparse(url).path
+            with open(file_path, "rb") as f:
+                image = f.read()
+            print(f'Read {url}')
+        else:
+            raise ValueError(f"Unsupprted URL scheme: {scheme}")
 
         filename = os.path.basename(url)
 
@@ -54,7 +65,13 @@ class Image:
 
     def delete_remote_image(self):
         url = self.source_url
-        requests.delete(url)
+        scheme = urlparse(url).scheme
+
+        if scheme in ("http", "https",):
+            requests.delete(url)
+        else:
+            raise ValueError(f"Unsupprted URL scheme: {scheme}")
+        
         print(f'Deleted {url}')
 
     def write_meta(self):

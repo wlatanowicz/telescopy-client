@@ -1,0 +1,5 @@
+-r requirements.txt
+
+git+https://github.com/wlatanowicz/telescopy-sims.git
+
+pytest==6.2.1
